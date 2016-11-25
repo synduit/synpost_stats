@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/alexcesaro/statsd"
+	"gopkg.in/alexcesaro/statsd.v2"
 )
 
 func GetStatsd() *statsd.Client {
