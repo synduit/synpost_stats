@@ -2,8 +2,10 @@ package main
 
 import (
 	"log"
-	"os"
 	"time"
+
+	"github.com/synduit/synpost_stats/synmongo"
+	"github.com/synduit/synpost_stats/synstatsd"
 
 	"gopkg.in/alexcesaro/statsd.v2"
 	"gopkg.in/mgo.v2"
@@ -29,11 +31,11 @@ func reportStats() {
 	}()
 
 	log.Print("Connecting to mongo")
-	session := getMongo()
+	session := synmongo.GetMongo()
 	defer session.Close()
 
 	log.Print("Creating statsd client")
-	c := getStatsd()
+	c := synstatsd.GetStatsd()
 	defer c.Close()
 
 	var ch = make(chan error)
@@ -47,33 +49,6 @@ func reportStats() {
 		}
 		time.Sleep(time.Second * 10)
 	}
-}
-
-func getMongo() *mgo.Session {
-	mongoServer := os.Getenv("SYNPOST_MONGO_SERVER")
-	session, err := mgo.Dial(mongoServer)
-	if err != nil {
-		log.Panic("Unrecoverable error in getMongo: ", err)
-	}
-
-	return session
-}
-
-func getStatsd() *statsd.Client {
-	statsdServer := os.Getenv("STATSD_HOST")
-	statsdPort := os.Getenv("STATSD_PORT")
-	if statsdPort == "" {
-		statsdPort = "8125"
-	}
-	c, err := statsd.New(
-		statsd.Address(statsdServer+":"+statsdPort),
-		statsd.Prefix("synpost"),
-	)
-	if err != nil {
-		log.Panic("Unrecoverable error in getStatsd: ", err)
-	}
-
-	return c
 }
 
 func reportPendingImportJobs(session *mgo.Session, c *statsd.Client, ch chan error) {
