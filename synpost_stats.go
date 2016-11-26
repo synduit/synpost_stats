@@ -38,21 +38,25 @@ func reportStats() {
 	c := synstatsd.GetStatsd()
 	defer c.Close()
 
+	type ReportFunc func(*mgo.Session, *statsd.Client, chan error)
+	var functions = [...]ReportFunc{
+		reportPendingImportJobs,
+		reportBrokenScheduledAutoresponders,
+		// add more functions here in future.
+	}
+
 	var ch = make(chan error)
-	var err1 error
-	var err2 error
 	for {
-		go reportPendingImportJobs(session, c, ch)
-		go reportBrokenScheduledAutoresponders(session, c, ch)
-		err1 = <-ch
-		err2 = <-ch
+		for _, f := range functions {
+			go f(session, c, ch)
+		}
+		for i := 0; i < len(functions); i++ {
+			err := <-ch
+			if err != nil {
+				panic(err)
+			}
+		}
 		c.Flush()
-		if err1 != nil {
-			panic(err1)
-		}
-		if err2 != nil {
-			panic(err2)
-		}
 		time.Sleep(time.Second * 10)
 	}
 }
