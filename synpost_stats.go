@@ -76,7 +76,7 @@ func reportPendingImportJobs(session *mgo.Session, c *statsd.Client, ch chan err
 
 func reportBrokenScheduledAutoresponders(session *mgo.Session, c *statsd.Client, ch chan error) {
 	coll := session.DB("synpost").C("Campaign")
-	n, err := coll.Find(bson.M{"type": "scheduled-autoresponder", "segment": bson.M{"$exists": false}}).Count()
+	n, err := coll.Find(bson.M{"type": "scheduled-autoresponder", "segment": bson.M{"$exists": false}, "status": "Scheduled"}).Count()
 	if err != nil {
 		log.Print("Unrecoverable error in reportBrokenScheduledAutoresponders: ", err)
 		ch <- err
