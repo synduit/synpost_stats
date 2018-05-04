@@ -41,7 +41,8 @@ deploy:
   local_dir: bin
   on:
     tags: true
-after_success: if ([ "$TRAVIS_BRANCH" == "master" ] || [ ! -z "$TRAVIS_TAG" ]) &&
-  [ "$TRAVIS_PULL_REQUEST" == "false" ]; then docker login -u "$DOCKER_USER" -p "$DOCKER_PASS";
-  docker build -t synduit/synpost_stats:"$TRAVIS_TAG" .; docker push synduit/synpost_stats:"$TRAVIS_TAG";
+after_success: if [ ! -z "$TRAVIS_TAG" ]; then
+  docker login -u "$DOCKER_USER" -p "$DOCKER_PASS";
+  docker build -t synduit/synpost_stats:"$TRAVIS_TAG" .;
+  docker push synduit/synpost_stats:"$TRAVIS_TAG";
   fi
