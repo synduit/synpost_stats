@@ -7,6 +7,7 @@ import (
 	"gopkg.in/alexcesaro/statsd.v2"
 )
 
+// GetStatsd returns as statsd client.
 func GetStatsd() *statsd.Client {
 	statsdServer := os.Getenv("STATSD_HOST")
 	statsdPort := os.Getenv("STATSD_PORT")
