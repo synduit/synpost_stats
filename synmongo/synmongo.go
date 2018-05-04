@@ -7,6 +7,7 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
+// GetMongo returns a MongoDB session.
 func GetMongo() *mgo.Session {
 	mongoServer := os.Getenv("SYNPOST_MONGO_SERVER")
 	session, err := mgo.Dial(mongoServer)

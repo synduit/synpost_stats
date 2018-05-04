@@ -1,0 +1,47 @@
+language: go
+go:
+- 1.9.x
+sudo: required
+services:
+- docker
+env:
+  matrix:
+  - BUILD_GOOS=linux BUILD_GOARCH=amd64 CGO_ENABLED=0
+before_install:
+- go get github.com/golang/lint/golint
+script:
+- go list ./... | xargs -n1 $GOPATH/bin/golint -set_exit_status
+- GOOS=$BUILD_GOOS GOARCH=$BUILD_GOARCH CGO_ENABLED=0 go build -o bin/synpost_stats-$BUILD_GOOS-$BUILD_GOARCH
+- cp bin/synpost_stats-$BUILD_GOOS-$BUILD_GOARCH synpost_stats
+- chmod +x synpost_stats
+notifications:
+  email:
+    on_success: change
+    on_failure: always
+deploy:
+- provider: s3
+  region: us-west-2
+  skip_cleanup: true
+  access_key_id: AKIAJP7ABK22PJJ4MTQQ
+  secret_access_key:
+    secure: "bGy/nIeH1TLHsdYWKmyGaVbN9yEZok0kT/c3xRmXQ/3yaEiJ3ixdTpQc5rlWVQ/7tFQCxHiyZLQS0aUzKOXVgkKXgMc8CT41LXxh7qcfKOJqMH/ndnE4MuUWZIrF2eK7OGgeuJsM6XZ+gO/wVyCoClXhitfG+1hRKRtdBh/rPsEITpP7to7jCRD/gbhaIt5vaGjgx6o+K89bO+lfBYHCgoFGj11dz8mGKscsJYlyf9IeRbIR10+0dXL8Ti4dZ0Ej7ekHKMjNMdotN9116t2n0HYVWG1ivEShLWd36iRcNQz0rTFzR/AMl+qfR1J+qWEY3XmLW1ZQCuWw0tcp1nW8Rk5Vjp48FsSjsEVndHIZFzLOqtwXUzIgdYmnb+iXKPWH4JUc4pJN7LZjj8HK/wAZ/Z31AahIN7RW1WZ3hTqhCs7nkXzQ4o5bnE5gURWNPZFnUjymJAuEb/WmXef0zB3IG1jmhMZ5BwI8c++iigSJwnhLVA9AlXJ5wwNo8j5ctgYefdFE3jaYtSSawPzMWCV+beUbsB68eFQzqByIiwDf5puZMBgpzeWp4ZBiah0/GyKJfzJFqcF9pqVnv2hmKJEDaubxcn58OaBuXdbx2SjLyAaUr9jMPkguMjkpUaYWEO4Wa0iBRqYOwgPAi8GW2AQ6QTyvHjql1Vqf4AjN5nNLk0o="
+  bucket: synduit-releases
+  upload-dir: synpost_stats/master
+  local_dir: bin
+  on:
+    branch: master
+- provider: s3
+  region: us-west-2
+  skip_cleanup: true
+  access_key_id: AKIAJP7ABK22PJJ4MTQQ
+  secret_access_key:
+    secure: "bGy/nIeH1TLHsdYWKmyGaVbN9yEZok0kT/c3xRmXQ/3yaEiJ3ixdTpQc5rlWVQ/7tFQCxHiyZLQS0aUzKOXVgkKXgMc8CT41LXxh7qcfKOJqMH/ndnE4MuUWZIrF2eK7OGgeuJsM6XZ+gO/wVyCoClXhitfG+1hRKRtdBh/rPsEITpP7to7jCRD/gbhaIt5vaGjgx6o+K89bO+lfBYHCgoFGj11dz8mGKscsJYlyf9IeRbIR10+0dXL8Ti4dZ0Ej7ekHKMjNMdotN9116t2n0HYVWG1ivEShLWd36iRcNQz0rTFzR/AMl+qfR1J+qWEY3XmLW1ZQCuWw0tcp1nW8Rk5Vjp48FsSjsEVndHIZFzLOqtwXUzIgdYmnb+iXKPWH4JUc4pJN7LZjj8HK/wAZ/Z31AahIN7RW1WZ3hTqhCs7nkXzQ4o5bnE5gURWNPZFnUjymJAuEb/WmXef0zB3IG1jmhMZ5BwI8c++iigSJwnhLVA9AlXJ5wwNo8j5ctgYefdFE3jaYtSSawPzMWCV+beUbsB68eFQzqByIiwDf5puZMBgpzeWp4ZBiah0/GyKJfzJFqcF9pqVnv2hmKJEDaubxcn58OaBuXdbx2SjLyAaUr9jMPkguMjkpUaYWEO4Wa0iBRqYOwgPAi8GW2AQ6QTyvHjql1Vqf4AjN5nNLk0o="
+  bucket: synduit-releases
+  upload-dir: synpost_stats/$TRAVIS_TAG
+  local_dir: bin
+  on:
+    tags: true
+after_success: if ([ "$TRAVIS_BRANCH" == "master" ] || [ ! -z "$TRAVIS_TAG" ]) &&
+  [ "$TRAVIS_PULL_REQUEST" == "false" ]; then docker login -u "$DOCKER_USER" -p "$DOCKER_PASS";
+  docker build -t synduit/synpost_stats:"$TRAVIS_TAG" .; docker push synduit/synpost_stats:"$TRAVIS_TAG";
+  fi
