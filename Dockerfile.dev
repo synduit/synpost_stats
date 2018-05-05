@@ -1,0 +1,9 @@
+FROM golang:1.9
+
+VOLUME /go/src/github.com/synduit/synpost_stats/
+
+RUN go get github.com/pilu/fresh
+
+WORKDIR /go/src/github.com/synduit/synpost_stats/
+
+CMD ["fresh"]
