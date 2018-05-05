@@ -42,6 +42,8 @@ func reportStats() {
 	type ReportFunc func(*mgo.Session, *statsd.Client, chan error)
 	var functions = [...]ReportFunc{
 		reportPendingImportJobs,
+		reportQueuedImportJobs,
+		reportProcessingImportJobs,
 		reportBrokenScheduledAutoresponders,
 		// add more functions here in future.
 	}
@@ -68,11 +70,40 @@ func reportPendingImportJobs(session *mgo.Session, c *statsd.Client, ch chan err
 	if err != nil {
 		log.Print("Unrecoverable error in reportPendingImportJobs: ", err)
 		ch <- err
-	} else {
-		log.Printf("Number of pending import jobs: %d", n)
-		c.Gauge("jobs.import_pending", n)
-		ch <- nil
+		return
 	}
+
+	log.Printf("Number of pending import jobs: %d", n)
+	c.Gauge("jobs.import.pending", n)
+	ch <- nil
+}
+
+func reportQueuedImportJobs(session *mgo.Session, c *statsd.Client, ch chan error) {
+	coll := session.DB("synpost").C("Job")
+	n, err := coll.Find(bson.M{"jobType": "Import Subscriber", "status": "Queued"}).Count()
+	if err != nil {
+		log.Print("Unrecoverable error in reportQueuedImportJobs: ", err)
+		ch <- err
+		return
+	}
+
+	log.Printf("Number of queued import jobs: %d", n)
+	c.Gauge("jobs.import.queued", n)
+	ch <- nil
+}
+
+func reportProcessingImportJobs(session *mgo.Session, c *statsd.Client, ch chan error) {
+	coll := session.DB("synpost").C("Job")
+	n, err := coll.Find(bson.M{"jobType": "Import Subscriber", "status": "Processing"}).Count()
+	if err != nil {
+		log.Print("Unrecoverable error in reportProcessingImportJobs: ", err)
+		ch <- err
+		return
+	}
+
+	log.Printf("Number of processing import jobs: %d", n)
+	c.Gauge("jobs.import.processing", n)
+	ch <- nil
 }
 
 func reportBrokenScheduledAutoresponders(session *mgo.Session, c *statsd.Client, ch chan error) {
