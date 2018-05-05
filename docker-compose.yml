@@ -1,0 +1,34 @@
+version: "3"
+services:
+  main:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ".:/go/src/github.com/synduit/synpost_stats"
+    networks:
+      - default
+      - localmongo
+    external_links:
+      - localmongo1:mongo1
+      - localmongo2:mongo2
+      - localmongo3:mongo3
+    environment:
+      - 'SYNPOST_MONGO_SERVER=mongodb://mongo1,mongo2,mongo3?replicaSet=rs0'
+      - 'STATSD_HOST=statsd'
+  statsd:
+    image: hopsoft/graphite-statsd:v0.9.15-phusion0.9.18
+    volumes:
+      - "graphite-storage:/opt/graphite/storage"
+    networks:
+      - default
+    ports:
+      - "8000:80"
+      - "8125:8125"
+      - "8126:8126"
+volumes:
+  graphite-storage:
+networks:
+  localmongo:
+    external:
+      name: localmongo_default
