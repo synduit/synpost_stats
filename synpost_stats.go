@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	log.Printf("synpost_stats (v%s)", appVersion)
 	log.Print("Sleeping for few seconds until DNS entries are stabilized")
 	time.Sleep(time.Second * 2)
 
