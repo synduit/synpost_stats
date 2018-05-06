@@ -73,7 +73,7 @@ func reportPendingImportJobs(session *mgo.Session, c *statsd.Client, ch chan err
 	}
 
 	log.Printf("Number of pending import jobs: %d", n)
-	c.Gauge("jobs.import.pending", n)
+	c.Gauge("jobs.import.status.pending", n)
 	ch <- nil
 }
 
@@ -87,7 +87,7 @@ func reportQueuedImportJobs(session *mgo.Session, c *statsd.Client, ch chan erro
 	}
 
 	log.Printf("Number of queued import jobs: %d", n)
-	c.Gauge("jobs.import.queued", n)
+	c.Gauge("jobs.import.status.queued", n)
 	ch <- nil
 }
 
@@ -101,7 +101,7 @@ func reportProcessingImportJobs(session *mgo.Session, c *statsd.Client, ch chan 
 	}
 
 	log.Printf("Number of processing import jobs: %d", n)
-	c.Gauge("jobs.import.processing", n)
+	c.Gauge("jobs.import.status.processing", n)
 	ch <- nil
 }
 
