@@ -12,6 +12,11 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+type job struct {
+	ID      bson.ObjectId `bson:"_id"`
+	Created time.Time     `bson:"created"`
+}
+
 func main() {
 	log.Printf("synpost_stats (v%s)", appVersion)
 	log.Print("Sleeping for few seconds until DNS entries are stabilized")
@@ -45,6 +50,7 @@ func reportStats() {
 		reportQueuedImportJobs,
 		reportProcessingImportJobs,
 		reportBrokenScheduledAutoresponders,
+		reportAverageAgeImportJobs,
 		// add more functions here in future.
 	}
 
@@ -123,4 +129,30 @@ func getJobCountByStatus(session *mgo.Session, status string) (int, error) {
 	n, err := coll.Find(bson.M{"jobType": "Import Subscriber", "status": status}).Count()
 
 	return n, err
+}
+
+func reportAverageAgeImportJobs(session *mgo.Session, c *statsd.Client, ch chan error) {
+	var res job
+	var age int
+	var count int
+	var average int
+	coll := session.DB("synpost").C("Job")
+	iter := coll.Find(bson.M{
+		"jobType": "Import Subscriber",
+		"status": bson.M{"$in": [3]string{
+			"Pending",
+			"Queued",
+			"Processing",
+		}},
+	}).Iter()
+	for iter.Next(&res) {
+		age += int(time.Since(res.Created).Seconds())
+		count++
+	}
+	if count != 0 {
+		average = age / count
+	}
+	log.Printf("Average age of import jobs: %d", average)
+	c.Gauge("jobs.import.age.average", average)
+	ch <- nil
 }
