@@ -117,11 +117,11 @@ func reportBrokenScheduledAutoresponders(session *mgo.Session, c *statsd.Client,
 	if err != nil {
 		log.Print("Unrecoverable error in reportBrokenScheduledAutoresponders: ", err)
 		ch <- err
-	} else {
-		log.Printf("Number of broken scheduled autoresponders: %d", n)
-		c.Gauge("campaigns.scheduled_ar.broken", n)
-		ch <- nil
+		return
 	}
+	log.Printf("Number of broken scheduled autoresponders: %d", n)
+	c.Gauge("campaigns.scheduled_ar.broken", n)
+	ch <- nil
 }
 
 func getJobCountByStatus(session *mgo.Session, status string) (int, error) {
