@@ -32,22 +32,6 @@
   version = "v1.10.10"
 
 [[projects]]
-  digest = "1:7218fd69ff5436d016101bbc6183cdc289aa45ac37b48e78846318e4ef389bea"
-  name = "github.com/kr/text"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "702c74938df48b97370179f33ce2107bd7ff3b3e"
-  version = "v0.2.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:4454a22e87e1aacfb4c7e9550ab98c711a5285a0cc7f9ff8952c44a9b0dbbb05"
-  name = "github.com/niemeyer/pretty"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "a10e7caefd8e0d600cea437f5c3613aeb1553d56"
-
-[[projects]]
   digest = "1:9e1d37b58d17113ec3cb5608ac0382313c5b59470b94ed97d0976e69c7022314"
   name = "github.com/pkg/errors"
   packages = ["."]
@@ -121,14 +105,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:76ee51c3f468493aff39dbacc401e8831fbb765104cbf613b89bef01cf4bad70"
-  name = "golang.org/x/net"
-  packages = ["context"]
-  pruneopts = "UT"
-  revision = "ab34263943818b32f575efc978a3d24e80b04bd7"
-
-[[projects]]
-  branch = "master"
   digest = "1:4692f916cb72b2c295f04841036d85a3f13e96d1cc9e8e4c2c30edebac518053"
   name = "golang.org/x/sync"
   packages = ["semaphore"]
@@ -158,64 +134,15 @@
   revision = "7fea3f0d2fab1ad973e641e51dba45443a311a90"
   version = "v2.0.0"
 
-[[projects]]
-  branch = "v1"
-  digest = "1:95c723aeb49b28a44330cd94e0272e23ad6ad6e3fb2945a556b72d71fd7b8c65"
-  name = "gopkg.in/check.v1"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "8fa46927fb4f5b54d48bde78c6c08db205b2298c"
-
-[[projects]]
-  branch = "v2"
-  digest = "1:e3237131563675e80deee0245e730a23ccc8f9241882ed776a3f3d93ec28c8b5"
-  name = "gopkg.in/mgo.v2"
-  packages = [
-    ".",
-    "bson",
-    "dbtest",
-    "internal/json",
-    "internal/sasl",
-    "internal/scram",
-    "txn",
-  ]
-  pruneopts = "UT"
-  revision = "a6b53ec6cb22a3699387a57a161566f9402ee85b"
-
-[[projects]]
-  branch = "v2"
-  digest = "1:5bb148b78468350091db2ffbb2370f35cc6dcd74d9378a31b1c7b86ff7528f08"
-  name = "gopkg.in/tomb.v2"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "d5d1b5820637886def9eef33e03a27a9f166942c"
-
-[[projects]]
-  digest = "1:d7f1bd887dc650737a421b872ca883059580e9f8314d601f88025df4f4802dce"
-  name = "gopkg.in/yaml.v2"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "0b1645d91e851e735d3e23330303ce81f70adbe3"
-  version = "v2.3.0"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
     "go.mongodb.org/mongo-driver/bson",
+    "go.mongodb.org/mongo-driver/bson/primitive",
     "go.mongodb.org/mongo-driver/mongo",
     "go.mongodb.org/mongo-driver/mongo/options",
     "gopkg.in/alexcesaro/statsd.v2",
-    "gopkg.in/check.v1",
-    "gopkg.in/mgo.v2",
-    "gopkg.in/mgo.v2/bson",
-    "gopkg.in/mgo.v2/dbtest",
-    "gopkg.in/mgo.v2/internal/json",
-    "gopkg.in/mgo.v2/internal/sasl",
-    "gopkg.in/mgo.v2/internal/scram",
-    "gopkg.in/mgo.v2/txn",
-    "gopkg.in/tomb.v2",
-    "gopkg.in/yaml.v2",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
