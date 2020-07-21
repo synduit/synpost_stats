@@ -14,8 +14,10 @@ services:
       - localmongo2:mongo2
       - localmongo3:mongo3
     environment:
-      - 'SYNPOST_MONGO_SERVER=mongodb://mongo1,mongo2,mongo3?replicaSet=rs0'
       - 'STATSD_HOST=statsd'
+      - 'DATABASE_NAME=synpost-stable'
+      - 'DATABASE_POOL_SIZE=30'
+      - 'MONGODB_URL=mongodb://mongo1,mongo2,mongo3/?replicaSet=rs0'
   statsd:
     image: hopsoft/graphite-statsd:v0.9.15-phusion0.9.18
     volumes:

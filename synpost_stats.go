@@ -1,20 +1,28 @@
 package main
 
 import (
+	"context"
 	"log"
 	"time"
 
 	"github.com/synduit/synpost_stats/synmongo"
 	"github.com/synduit/synpost_stats/synstatsd"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"gopkg.in/alexcesaro/statsd.v2"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+)
+
+const (
+	jobCollection           = "Job"
+	campaignCollection      = "Campaign"
+	jobTypeImportSubscriber = "Import Subscriber"
 )
 
 type job struct {
-	ID      bson.ObjectId `bson:"_id"`
-	Created time.Time     `bson:"created"`
+	ID      primitive.ObjectID `bson:"_id"`
+	Created time.Time          `bson:"created"`
 }
 
 func main() {
@@ -36,15 +44,11 @@ func reportStats() {
 		}
 	}()
 
-	log.Print("Connecting to mongo")
-	session := synmongo.GetMongo()
-	defer session.Close()
-
 	log.Print("Creating statsd client")
 	c := synstatsd.GetStatsd()
 	defer c.Close()
 
-	type ReportFunc func(*mgo.Session, *statsd.Client, chan error)
+	type ReportFunc func(*statsd.Client, chan error)
 	var functions = [...]ReportFunc{
 		reportPendingImportJobs,
 		reportQueuedImportJobs,
@@ -57,7 +61,7 @@ func reportStats() {
 	var ch = make(chan error)
 	for {
 		for _, f := range functions {
-			go f(session, c, ch)
+			go f(c, ch)
 		}
 		for i := 0; i < len(functions); i++ {
 			err := <-ch
@@ -70,8 +74,8 @@ func reportStats() {
 	}
 }
 
-func reportPendingImportJobs(session *mgo.Session, c *statsd.Client, ch chan error) {
-	n, err := getJobCountByStatus(session, "Pending")
+func reportPendingImportJobs(c *statsd.Client, ch chan error) {
+	n, err := getJobCountByStatus("Pending")
 	if err != nil {
 		log.Print("Unrecoverable error in reportPendingImportJobs: ", err)
 		ch <- err
@@ -83,8 +87,8 @@ func reportPendingImportJobs(session *mgo.Session, c *statsd.Client, ch chan err
 	ch <- nil
 }
 
-func reportQueuedImportJobs(session *mgo.Session, c *statsd.Client, ch chan error) {
-	n, err := getJobCountByStatus(session, "Queued")
+func reportQueuedImportJobs(c *statsd.Client, ch chan error) {
+	n, err := getJobCountByStatus("Queued")
 
 	if err != nil {
 		log.Print("Unrecoverable error in reportQueuedImportJobs: ", err)
@@ -97,8 +101,8 @@ func reportQueuedImportJobs(session *mgo.Session, c *statsd.Client, ch chan erro
 	ch <- nil
 }
 
-func reportProcessingImportJobs(session *mgo.Session, c *statsd.Client, ch chan error) {
-	n, err := getJobCountByStatus(session, "Processing")
+func reportProcessingImportJobs(c *statsd.Client, ch chan error) {
+	n, err := getJobCountByStatus("Processing")
 
 	if err != nil {
 		log.Print("Unrecoverable error in reportProcessingImportJobs: ", err)
@@ -111,9 +115,19 @@ func reportProcessingImportJobs(session *mgo.Session, c *statsd.Client, ch chan 
 	ch <- nil
 }
 
-func reportBrokenScheduledAutoresponders(session *mgo.Session, c *statsd.Client, ch chan error) {
-	coll := session.DB("synpost").C("Campaign")
-	n, err := coll.Find(bson.M{"type": "scheduled-autoresponder", "segment": bson.M{"$exists": false}, "status": "Scheduled"}).Count()
+func reportBrokenScheduledAutoresponders(c *statsd.Client, ch chan error) {
+	mdb, con := synmongo.GetMongoConnection()
+	defer con.Disconnect(context.Background())
+
+	col := mdb.Collection(campaignCollection)
+
+	filter := bson.M{}
+	filter["type"] = "scheduled-autoresponder"
+	filter["segment"] = bson.M{"$exists": false}
+	filter["status"] = "Scheduled"
+
+	n, err := col.CountDocuments(context.TODO(), filter)
+
 	if err != nil {
 		log.Print("Unrecoverable error in reportBrokenScheduledAutoresponders: ", err)
 		ch <- err
@@ -124,31 +138,54 @@ func reportBrokenScheduledAutoresponders(session *mgo.Session, c *statsd.Client,
 	ch <- nil
 }
 
-func getJobCountByStatus(session *mgo.Session, status string) (int, error) {
-	coll := session.DB("synpost").C("Job")
-	n, err := coll.Find(bson.M{"jobType": "Import Subscriber", "status": status}).Count()
+func getJobCountByStatus(status string) (int, error) {
+	mdb, con := synmongo.GetMongoConnection()
+	defer con.Disconnect(context.Background())
 
-	return n, err
+	c := mdb.Collection(jobCollection)
+
+	filter := bson.M{}
+	filter["jobType"] = jobTypeImportSubscriber
+	filter["status"] = status
+
+	n, err := c.CountDocuments(context.TODO(), filter)
+
+	return int(n), err
 }
 
-func reportAverageAgeImportJobs(session *mgo.Session, c *statsd.Client, ch chan error) {
-	var res job
+func reportAverageAgeImportJobs(c *statsd.Client, ch chan error) {
 	var age int
 	var count int
 	var average int
-	coll := session.DB("synpost").C("Job")
-	iter := coll.Find(bson.M{
-		"jobType": "Import Subscriber",
-		"status": bson.M{"$in": [3]string{
-			"Pending",
-			"Queued",
-			"Processing",
-		}},
-	}).Iter()
-	for iter.Next(&res) {
-		age += int(time.Since(res.Created).Seconds())
-		count++
+	var cur *mongo.Cursor
+
+	mdb, con := synmongo.GetMongoConnection()
+	defer con.Disconnect(context.Background())
+
+	col := mdb.Collection(jobCollection)
+
+	filter := bson.M{}
+	filter["jobType"] = jobTypeImportSubscriber
+	filter["status"] = bson.M{"$in": [3]string{
+		"Pending",
+		"Queued",
+		"Processing",
+	}}
+
+	cur, _ = col.Find(context.TODO(), filter)
+
+	defer cur.Close(context.TODO())
+
+	for cur.Next(context.TODO()) {
+		job := &job{}
+		err := cur.Decode(job)
+
+		if err == nil {
+			age += int(time.Since(job.Created).Seconds())
+			count++
+		}
 	}
+
 	if count != 0 {
 		average = age / count
 	}
