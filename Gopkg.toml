@@ -29,22 +29,6 @@
   name = "gopkg.in/alexcesaro/statsd.v2"
   version = "2.0.0"
 
-[[constraint]]
-  branch = "v1"
-  name = "gopkg.in/check.v1"
-
-[[constraint]]
-  branch = "v2"
-  name = "gopkg.in/mgo.v2"
-
-[[constraint]]
-  branch = "v2"
-  name = "gopkg.in/tomb.v2"
-
-[[constraint]]
-  name = "gopkg.in/yaml.v2"
-  version = "2.3.0"
-
 [prune]
   go-tests = true
   unused-packages = true
