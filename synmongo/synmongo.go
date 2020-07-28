@@ -16,11 +16,6 @@ const (
 	mongoIdleConnectTimeout = 20 // in milliseconds
 )
 
-// Connector represents behavior for connecting to db.
-type Connector interface {
-	Connect() (interface{}, error)
-}
-
 // Mongo represents db for connecting
 type Mongo struct{}
 
